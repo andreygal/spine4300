@@ -1,10 +1,11 @@
 library(stringr)
 library(RSQLite)
 library(data.table)
+#general setup 
 options(scipen = 999)
 setwd('~/Documents/Ortho/')
-
 diag_fields <- noquote(paste0("dx", sprintf("%02d", c(1:25))))
+#for creating valid ICD-9 codes from ranges (avoids trailing zero problem)
 icd9_range_gen <- function(start, end) {
   a <- trunc(start / 100)
   b <- trunc(end / 100)
