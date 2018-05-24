@@ -1,6 +1,8 @@
 library(stringr)
 library(RSQLite)
+library(data.table)
 options(scipen = 999)
+setwd('~/Documents/Ortho/')
 
 diag_fields <- noquote(paste0("dx", sprintf("%02d", c(1:25))))
 icd9_range_gen <- function(start, end) {
@@ -41,3 +43,17 @@ nrfb <- c(icd9_range_gen(23770, 23772), 23779)
 crp  <- c(03438, 03439)
 exclus_codes <- noquote(c(ocd, ssd, eds, eld, sd, dc, sad, del, pd, osm, trf, 
                           pfr, pcm, ostp, misc, polm, ric, tub, sbm, nrfb, crp))
+
+#query SPARCS for patients
+drv <- dbDriver("SQLite")
+con <- dbConnect(drv, 'new_test.db', flags = SQLITE_RO)
+query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
+          FROM primrecs
+          WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
+          PR00 IN (8102, 8103, 8132, 8133) AND
+          age >= 18 AND
+          year BETWEEN '2009' AND '2011';"
+patients <- as.data.table(dbGetQuery(con, query))
+
+
+
