@@ -64,12 +64,16 @@ query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
 patients <- as.data.table(dbGetQuery(con, query))
 
 #remove patients meeting the exclusion criteria 
+exlc_pts_dischno <- vector('integer')
+
 for(patient in patients) { 
   for(dx_field in diag_fields) {
-    if (!(dx_field %in% exclus_codes)
+    if (dx_field %in% exclus_codes)
+      exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
   }
 }
- 
+
+non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),] 
 
 
 
