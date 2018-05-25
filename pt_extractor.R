@@ -62,18 +62,29 @@ query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
           age >= 18 AND
           year BETWEEN '2009' AND '2011';"
 patients <- as.data.table(dbGetQuery(con, query))
+dbDisconnect(con)
 
+#https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
 #remove patients meeting the exclusion criteria 
 exlc_pts_dischno <- vector('integer')
 
-for(patient in patients) { 
-  for(dx_field in diag_fields) {
+for (patient in patients) { 
+  for (dx_field in diag_fields) {
     if (dx_field %in% exclus_codes)
       exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
   }
 }
 
-non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),] 
+non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),]
+mhd_group
+colnames(mhd_group) <- colnames(non_excl_pts)
+colnames(no_mhd_group) <- colnames(non_excl_pts) 
 
+for (patient in non_excl_pts) {
+  for (diag_field in diag_field) {
+    if (diag_field in mhd_codes) { 
+      rbind
+#Select columns named in a variable using the .. prefix
+      
 
 
