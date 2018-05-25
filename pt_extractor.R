@@ -45,6 +45,14 @@ crp  <- c(03438, 03439)
 exclus_codes <- noquote(c(ocd, ssd, eds, eld, sd, dc, sad, del, pd, osm, trf, 
                           pfr, pcm, ostp, misc, polm, ric, tub, sbm, nrfb, crp))
 
+#MHD group ICD-9 codes 
+sd <- c(78052, 78054, 34701:34709, 3471, 327.23, 327.24,
+        327.26, 30745:30747, 33394, 78052, 78054, 78059)
+dd <- c(29699, 29621:29626, 2962, 2963, 29631:29636, 3004, 29393, 311)
+ad <- c(29384, 3000, 30001:30009, 30022:30029)
+sd <- c(3074, 3083, 3090, 30924, 30928, 3093, 30981, 30989, 3099, 31389)
+mhd_codes <- c(sd, dd, ad, sd)
+
 #query SPARCS for patients
 drv <- dbDriver("SQLite")
 con <- dbConnect(drv, 'new_test.db', flags = SQLITE_RO)
@@ -55,6 +63,29 @@ query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
           age >= 18 AND
           year BETWEEN '2009' AND '2011';"
 patients <- as.data.table(dbGetQuery(con, query))
+dbDisconnect(con)
 
+#https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
+#remove patients meeting the exclusion criteria 
+exlc_pts_dischno <- vector('integer')
+
+for (patient in patients) { 
+  for (dx_field in diag_fields) {
+    if (dx_field %in% exclus_codes)
+      exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
+  }
+}
+
+non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),]
+mhd_group
+colnames(mhd_group) <- colnames(non_excl_pts)
+colnames(no_mhd_group) <- colnames(non_excl_pts) 
+
+for (patient in non_excl_pts) {
+  for (diag_field in diag_field) {
+    if (diag_field in mhd_codes) { 
+      rbind
+#Select columns named in a variable using the .. prefix
+      
 
 
