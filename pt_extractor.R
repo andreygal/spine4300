@@ -1,10 +1,10 @@
 library(stringr)
 library(RSQLite)
-library(data.table)
+library(tidyverse)
 #general setup 
 options(scipen = 999)
 setwd('~/Documents/Ortho/')
-diag_fields <- noquote(paste0("dx", sprintf("%02d", c(1:25))))
+diag_fields <- noquote(paste0("dx", sprintf("%02d", c(2:25))))
 #for creating valid ICD-9 codes from ranges (avoids trailing zero problem)
 icd9_range_gen <- function(start, end) {
   a <- trunc(start / 100)
@@ -56,34 +56,43 @@ mhd_codes <- c(sd, dd, ad, sd)
 #query SPARCS for patients
 drv <- dbDriver("SQLite")
 con <- dbConnect(drv, 'new_test.db', flags = SQLITE_RO)
-query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
-          FROM primrecs
-          WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
-          PR00 IN (8102, 8103, 8132, 8133) AND
-          age >= 18 AND
-          year BETWEEN '2009' AND '2011';"
-patients <- as.data.table(dbGetQuery(con, query))
+# query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
+#           FROM primrecs
+#           WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
+#           PR00 IN (8102, 8103, 8132, 8133) AND
+#           age >= 18 AND
+#           year BETWEEN '2009' AND '2011';"
+tquery <- "SELECT * FROM primrecs"
+patients <- as.tibble(dbGetQuery(con, tquery))
 dbDisconnect(con)
 
 #https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
 #remove patients meeting the exclusion criteria 
-exlc_pts_dischno <- vector('integer')
-
-for (patient in patients) { 
-  for (dx_field in diag_fields) {
-    if (dx_field %in% exclus_codes)
-      exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
-  }
+#when storing cols in a variable, don't forget the [,..var] operator
+#qualif_pts <- patients[!which(patients$dx02 %in% exclus_codes)]
+recur_filter <- function(pts, diags) {
+  if (length(diags) == 0) return()
+  diag <- diags[1]
+  print(diag)
+  pts <- recur_filter(pts[which(!(pts[, as.character(diag)] %in% exclus_codes)),], diags[-1])
 }
 
-non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),]
-mhd_group
-colnames(mhd_group) <- colnames(non_excl_pts)
-colnames(no_mhd_group) <- colnames(non_excl_pts) 
-
-for (patient in non_excl_pts) {
-  for (diag_field in diag_field) {
-    if (diag_field in mhd_codes) { 
+hahaha <- recur_filter(patients, diag_fields)
+# for (patient in patients) { 
+#   for (dx_field in diag_fields) {
+#     if (dx_field %in% exclus_codes)
+#       exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
+#   }
+# }
+# 
+# non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),]
+# mhd_group
+# colnames(mhd_group) <- colnames(non_excl_pts)
+# colnames(no_mhd_group) <- colnames(non_excl_pts) 
+# 
+# for (patient in non_excl_pts) {
+#   for (diag_field in diag_field) {
+#     if (diag_field in mhd_codes) { 
       rbind
 #Select columns named in a variable using the .. prefix
       
