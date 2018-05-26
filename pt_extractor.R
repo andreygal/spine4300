@@ -68,33 +68,14 @@ dbDisconnect(con)
 
 #https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
 #remove patients meeting the exclusion criteria 
-#when storing cols in a variable, don't forget the [,..var] operator
-#qualif_pts <- patients[!which(patients$dx02 %in% exclus_codes)]
-recur_filter <- function(pts, diags) {
-  if (length(diags) == 0) return()
-  diag <- diags[1]
+#if using dt, when storing cols in a variable, don't forget the [,..var] operator
+recur_filter <- function(pts, diags, codes) {
+  if (length(diags) == 0) return(pts)
+  diag <- diags[length(diags)]
   print(diag)
-  pts <- recur_filter(pts[which(!(pts[, as.character(diag)] %in% exclus_codes)),], diags[-1])
+  pts <- recur_filter(pts[which(!(pts[[diag]] %in% codes)),], diags[-length(diags)], codes)
 }
-
-hahaha <- recur_filter(patients, diag_fields)
-# for (patient in patients) { 
-#   for (dx_field in diag_fields) {
-#     if (dx_field %in% exclus_codes)
-#       exlc_pts_dischno <- c(exlc_pts_dischno, patient$dischno)
-#   }
-# }
-# 
-# non_excl_pts <- patients[!(patients$dischno %in% exlc_pts_dischno),]
-# mhd_group
-# colnames(mhd_group) <- colnames(non_excl_pts)
-# colnames(no_mhd_group) <- colnames(non_excl_pts) 
-# 
-# for (patient in non_excl_pts) {
-#   for (diag_field in diag_field) {
-#     if (diag_field in mhd_codes) { 
-      rbind
-#Select columns named in a variable using the .. prefix
-      
-
-
+#obtain patient groups 
+filtered_pts <- recur_filter(patients, diag_fields, exclus_codes)
+non_mhd <- recur_filter(filtered_pts, diag_fields, mhd_codes)
+mhd <- anti_join(filtered_pts, non_mhd, by = "DISCHNO")
