@@ -585,9 +585,9 @@ CREATE TABLE primrecs
 
 CREATE TABLE secrecs 
 (
-	DISCHNO              	CHAR(14)       NOT NULL,
+	DISCHNO              	INTEGER(14)    NOT NULL,
 	CRECTP               	CHAR(1)        NULL,
-	SEQ                  	CHAR(3)        NULL,
+	SEQ                  	INTEGER(3)     NULL,
 	CNT                  	CHAR(3)        NULL,
 	ANCICD1              	CHAR(4)        NULL,
 	ANCTYP1              	CHAR(1)        NULL,

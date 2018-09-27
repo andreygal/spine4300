@@ -3,7 +3,7 @@ library(RSQLite)
 library(tidyverse)
 #general setup 
 options(scipen = 999)
-setwd('~/Documents/Ortho/')
+setwd('~/Documents/Ortho/spine4300')
 diag_fields <- noquote(paste0("dx", sprintf("%02d", c(2:25))))
 #for creating valid ICD-9 codes from ranges (avoids trailing zero problem)
 icd9_range_gen <- function(start, end) {
@@ -55,26 +55,27 @@ mhd_codes <- c(sd, dd, ad, sd)
 
 #query SPARCS for patients
 drv <- dbDriver("SQLite")
-con <- dbConnect(drv, 'new_test.db', flags = SQLITE_RO)
-# query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age
-#           FROM primrecs
-#           WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
-#           PR00 IN (8102, 8103, 8132, 8133) AND
-#           age >= 18 AND
-#           year BETWEEN '2009' AND '2011';"
-tquery <- "SELECT * FROM primrecs"
-patients <- as.tibble(dbGetQuery(con, tquery))
+con <- dbConnect(drv, 'test_500k.db', flags = SQLITE_RO)
+query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age_corr
+          FROM Primrecs
+          WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
+                PR00 IN (8102, 8103, 8132, 8133) AND
+          age_corr >= 18 AND
+          year BETWEEN '2009' AND '2011';"
+# tquery <- "SELECT * FROM primrecs"
+patients <- as.tibble(dbGetQuery(con, query))
 dbDisconnect(con)
 
-#https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
 #remove patients meeting the exclusion criteria 
+#https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html
 #if using dt, when storing cols in a variable, don't forget the [,..var] operator
 recur_filter <- function(pts, diags, codes) {
   if (length(diags) == 0) return(pts)
-  diag <- diags[length(diags)]
+  diag <- diags[1]
   print(diag)
-  pts <- recur_filter(pts[which(!(pts[[diag]] %in% codes)),], diags[-length(diags)], codes)
+  pts <- recur_filter(pts[which(!(pts[[diag]] %in% codes)),], diags[-1], codes)
 }
+
 #obtain patient groups 
 filtered_pts <- recur_filter(patients, diag_fields, exclus_codes)
 non_mhd <- recur_filter(filtered_pts, diag_fields, mhd_codes)
