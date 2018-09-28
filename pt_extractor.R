@@ -55,7 +55,7 @@ mhd_codes <- c(sd, dd, ad, sd)
 
 #query SPARCS for patients
 drv <- dbDriver("SQLite")
-con <- dbConnect(drv, 'test_500k.db', flags = SQLITE_RO)
+con <- dbConnect(drv, 'test.db', flags = SQLITE_RO)
 query <- "SELECT SUBSTR(dischno, 0 ,5) AS year, *, CAST(age AS INTEGER) AS age_corr
           FROM Primrecs
           WHERE dx01 IN (7210, 7220, 7224, 72281, 72291, 7211, 72271) AND
@@ -78,5 +78,7 @@ recur_filter <- function(pts, diags, codes) {
 
 #obtain patient groups 
 filtered_pts <- recur_filter(patients, diag_fields, exclus_codes)
-non_mhd <- recur_filter(filtered_pts, diag_fields, mhd_codes)
-mhd <- anti_join(filtered_pts, non_mhd, by = "DISCHNO")
+non_mhd      <- recur_filter(filtered_pts, diag_fields, mhd_codes)
+mhd          <- anti_join(filtered_pts, non_mhd, by = "DISCHNO")
+
+follow_up <- mhd %>% select(DISCHNO, EUPIDE, age_corr, dx01) %>% group_by(EUPIDE) %>% do(count(.)) %>% filter(any(n > 1))
